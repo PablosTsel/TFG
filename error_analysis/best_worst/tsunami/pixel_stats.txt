@@ -1,0 +1,22 @@
+Disaster type: tsunami
+Building pixel filter: 100 to 500
+Total samples processed: 100
+Samples kept: 6
+Samples skipped (too few buildings): 22
+Samples skipped (too many buildings): 72
+
+Best Examples (lowest error rate):
+  1. palu-tsunami_00000016 - Building pixels: 151, Error rate: 0.0016
+  2. sunda-tsunami_00000137 - Building pixels: 306, Error rate: 0.0029
+  3. palu-tsunami_00000121 - Building pixels: 235, Error rate: 0.0029
+  4. palu-tsunami_00000003 - Building pixels: 187, Error rate: 0.0030
+  5. sunda-tsunami_00000028 - Building pixels: 207, Error rate: 0.0032
+  6. sunda-tsunami_00000130 - Building pixels: 445, Error rate: 0.0053
+
+Worst Examples (highest error rate):
+  1. palu-tsunami_00000016 - Building pixels: 151, Error rate: 0.0016
+  2. sunda-tsunami_00000137 - Building pixels: 306, Error rate: 0.0029
+  3. palu-tsunami_00000121 - Building pixels: 235, Error rate: 0.0029
+  4. palu-tsunami_00000003 - Building pixels: 187, Error rate: 0.0030
+  5. sunda-tsunami_00000028 - Building pixels: 207, Error rate: 0.0032
+  6. sunda-tsunami_00000130 - Building pixels: 445, Error rate: 0.0053

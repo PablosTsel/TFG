@@ -1,0 +1,30 @@
+Disaster type: hurricane
+Building pixel filter: 100 to 500
+Total samples processed: 100
+Samples kept: 18
+Samples skipped (too few buildings): 11
+Samples skipped (too many buildings): 71
+
+Best Examples (lowest error rate):
+  1. hurricane-harvey_00000051 - Building pixels: 108, Error rate: 0.0004
+  2. hurricane-harvey_00000041 - Building pixels: 445, Error rate: 0.0011
+  3. hurricane-florence_00000445 - Building pixels: 404, Error rate: 0.0013
+  4. hurricane-florence_00000192 - Building pixels: 128, Error rate: 0.0015
+  5. hurricane-florence_00000166 - Building pixels: 286, Error rate: 0.0023
+  6. hurricane-florence_00000484 - Building pixels: 296, Error rate: 0.0025
+  7. hurricane-matthew_00000384 - Building pixels: 242, Error rate: 0.0028
+  8. hurricane-matthew_00000379 - Building pixels: 197, Error rate: 0.0029
+  9. hurricane-michael_00000103 - Building pixels: 369, Error rate: 0.0029
+  10. hurricane-florence_00000151 - Building pixels: 458, Error rate: 0.0031
+
+Worst Examples (highest error rate):
+  1. hurricane-michael_00000103 - Building pixels: 369, Error rate: 0.0029
+  2. hurricane-florence_00000151 - Building pixels: 458, Error rate: 0.0031
+  3. hurricane-harvey_00000203 - Building pixels: 351, Error rate: 0.0031
+  4. hurricane-matthew_00000228 - Building pixels: 286, Error rate: 0.0034
+  5. hurricane-matthew_00000250 - Building pixels: 235, Error rate: 0.0034
+  6. hurricane-florence_00000365 - Building pixels: 401, Error rate: 0.0039
+  7. hurricane-matthew_00000205 - Building pixels: 367, Error rate: 0.0043
+  8. hurricane-florence_00000344 - Building pixels: 480, Error rate: 0.0046
+  9. hurricane-matthew_00000263 - Building pixels: 412, Error rate: 0.0050
+  10. hurricane-florence_00000441 - Building pixels: 489, Error rate: 0.0058

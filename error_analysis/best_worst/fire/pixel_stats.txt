@@ -1,0 +1,30 @@
+Disaster type: fire
+Building pixel filter: 100 to 500
+Total samples processed: 100
+Samples kept: 16
+Samples skipped (too few buildings): 64
+Samples skipped (too many buildings): 20
+
+Best Examples (lowest error rate):
+  1. woolsey-fire_00000178 - Building pixels: 169, Error rate: 0.0005
+  2. socal-fire_00000279 - Building pixels: 131, Error rate: 0.0008
+  3. socal-fire_00001143 - Building pixels: 128, Error rate: 0.0009
+  4. woolsey-fire_00000391 - Building pixels: 165, Error rate: 0.0011
+  5. socal-fire_00000219 - Building pixels: 173, Error rate: 0.0015
+  6. woolsey-fire_00000167 - Building pixels: 106, Error rate: 0.0016
+  7. woolsey-fire_00000080 - Building pixels: 113, Error rate: 0.0017
+  8. woolsey-fire_00000143 - Building pixels: 194, Error rate: 0.0018
+  9. woolsey-fire_00000532 - Building pixels: 189, Error rate: 0.0023
+  10. socal-fire_00001340 - Building pixels: 242, Error rate: 0.0025
+
+Worst Examples (highest error rate):
+  1. woolsey-fire_00000080 - Building pixels: 113, Error rate: 0.0017
+  2. woolsey-fire_00000143 - Building pixels: 194, Error rate: 0.0018
+  3. woolsey-fire_00000532 - Building pixels: 189, Error rate: 0.0023
+  4. socal-fire_00001340 - Building pixels: 242, Error rate: 0.0025
+  5. socal-fire_00000081 - Building pixels: 162, Error rate: 0.0027
+  6. woolsey-fire_00000732 - Building pixels: 238, Error rate: 0.0031
+  7. woolsey-fire_00000589 - Building pixels: 324, Error rate: 0.0040
+  8. woolsey-fire_00000480 - Building pixels: 353, Error rate: 0.0052
+  9. woolsey-fire_00000085 - Building pixels: 258, Error rate: 0.0053
+  10. woolsey-fire_00000011 - Building pixels: 492, Error rate: 0.0057

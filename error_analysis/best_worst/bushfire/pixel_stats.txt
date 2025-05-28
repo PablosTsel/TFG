@@ -1,0 +1,30 @@
+Disaster type: bushfire
+Building pixel filter: 100 to 500
+Total samples processed: 100
+Samples kept: 11
+Samples skipped (too few buildings): 82
+Samples skipped (too many buildings): 7
+
+Best Examples (lowest error rate):
+  1. pinery-bushfire_00001768 - Building pixels: 156, Error rate: 0.0007
+  2. pinery-bushfire_00000919 - Building pixels: 125, Error rate: 0.0011
+  3. pinery-bushfire_00001450 - Building pixels: 219, Error rate: 0.0012
+  4. pinery-bushfire_00000002 - Building pixels: 159, Error rate: 0.0013
+  5. pinery-bushfire_00001051 - Building pixels: 226, Error rate: 0.0015
+  6. pinery-bushfire_00000714 - Building pixels: 200, Error rate: 0.0022
+  7. pinery-bushfire_00000103 - Building pixels: 298, Error rate: 0.0028
+  8. pinery-bushfire_00000241 - Building pixels: 352, Error rate: 0.0033
+  9. pinery-bushfire_00001801 - Building pixels: 437, Error rate: 0.0034
+  10. pinery-bushfire_00001146 - Building pixels: 464, Error rate: 0.0040
+
+Worst Examples (highest error rate):
+  1. pinery-bushfire_00000919 - Building pixels: 125, Error rate: 0.0011
+  2. pinery-bushfire_00001450 - Building pixels: 219, Error rate: 0.0012
+  3. pinery-bushfire_00000002 - Building pixels: 159, Error rate: 0.0013
+  4. pinery-bushfire_00001051 - Building pixels: 226, Error rate: 0.0015
+  5. pinery-bushfire_00000714 - Building pixels: 200, Error rate: 0.0022
+  6. pinery-bushfire_00000103 - Building pixels: 298, Error rate: 0.0028
+  7. pinery-bushfire_00000241 - Building pixels: 352, Error rate: 0.0033
+  8. pinery-bushfire_00001801 - Building pixels: 437, Error rate: 0.0034
+  9. pinery-bushfire_00001146 - Building pixels: 464, Error rate: 0.0040
+  10. pinery-bushfire_00001289 - Building pixels: 458, Error rate: 0.0059

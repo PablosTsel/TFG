@@ -1,0 +1,30 @@
+Disaster type: volcano
+Building pixel filter: 100 to 500
+Total samples processed: 100
+Samples kept: 16
+Samples skipped (too few buildings): 45
+Samples skipped (too many buildings): 39
+
+Best Examples (lowest error rate):
+  1. lower-puna-volcano_00000031 - Building pixels: 196, Error rate: 0.0012
+  2. lower-puna-volcano_00000143 - Building pixels: 259, Error rate: 0.0012
+  3. lower-puna-volcano_00000186 - Building pixels: 248, Error rate: 0.0014
+  4. lower-puna-volcano_00000259 - Building pixels: 229, Error rate: 0.0017
+  5. lower-puna-volcano_00000029 - Building pixels: 341, Error rate: 0.0018
+  6. lower-puna-volcano_00000008 - Building pixels: 367, Error rate: 0.0018
+  7. lower-puna-volcano_00000117 - Building pixels: 289, Error rate: 0.0018
+  8. lower-puna-volcano_00000152 - Building pixels: 298, Error rate: 0.0025
+  9. lower-puna-volcano_00000075 - Building pixels: 482, Error rate: 0.0025
+  10. lower-puna-volcano_00000241 - Building pixels: 153, Error rate: 0.0029
+
+Worst Examples (highest error rate):
+  1. lower-puna-volcano_00000117 - Building pixels: 289, Error rate: 0.0018
+  2. lower-puna-volcano_00000152 - Building pixels: 298, Error rate: 0.0025
+  3. lower-puna-volcano_00000075 - Building pixels: 482, Error rate: 0.0025
+  4. lower-puna-volcano_00000241 - Building pixels: 153, Error rate: 0.0029
+  5. lower-puna-volcano_00000283 - Building pixels: 410, Error rate: 0.0029
+  6. lower-puna-volcano_00000267 - Building pixels: 488, Error rate: 0.0032
+  7. lower-puna-volcano_00000171 - Building pixels: 278, Error rate: 0.0033
+  8. lower-puna-volcano_00000248 - Building pixels: 395, Error rate: 0.0038
+  9. lower-puna-volcano_00000161 - Building pixels: 495, Error rate: 0.0049
+  10. lower-puna-volcano_00000115 - Building pixels: 491, Error rate: 0.0060

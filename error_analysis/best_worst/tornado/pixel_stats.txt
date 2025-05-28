@@ -1,0 +1,30 @@
+Disaster type: tornado
+Building pixel filter: 100 to 500
+Total samples processed: 100
+Samples kept: 10
+Samples skipped (too few buildings): 13
+Samples skipped (too many buildings): 77
+
+Best Examples (lowest error rate):
+  1. tuscaloosa-tornado_00000083 - Building pixels: 110, Error rate: 0.0004
+  2. tuscaloosa-tornado_00000026 - Building pixels: 148, Error rate: 0.0007
+  3. moore-tornado_00000040 - Building pixels: 171, Error rate: 0.0014
+  4. moore-tornado_00000083 - Building pixels: 375, Error rate: 0.0016
+  5. tuscaloosa-tornado_00000100 - Building pixels: 350, Error rate: 0.0019
+  6. tuscaloosa-tornado_00000290 - Building pixels: 257, Error rate: 0.0019
+  7. tuscaloosa-tornado_00000284 - Building pixels: 272, Error rate: 0.0020
+  8. tuscaloosa-tornado_00000046 - Building pixels: 165, Error rate: 0.0025
+  9. moore-tornado_00000108 - Building pixels: 319, Error rate: 0.0029
+  10. tuscaloosa-tornado_00000210 - Building pixels: 357, Error rate: 0.0048
+
+Worst Examples (highest error rate):
+  1. tuscaloosa-tornado_00000083 - Building pixels: 110, Error rate: 0.0004
+  2. tuscaloosa-tornado_00000026 - Building pixels: 148, Error rate: 0.0007
+  3. moore-tornado_00000040 - Building pixels: 171, Error rate: 0.0014
+  4. moore-tornado_00000083 - Building pixels: 375, Error rate: 0.0016
+  5. tuscaloosa-tornado_00000100 - Building pixels: 350, Error rate: 0.0019
+  6. tuscaloosa-tornado_00000290 - Building pixels: 257, Error rate: 0.0019
+  7. tuscaloosa-tornado_00000284 - Building pixels: 272, Error rate: 0.0020
+  8. tuscaloosa-tornado_00000046 - Building pixels: 165, Error rate: 0.0025
+  9. moore-tornado_00000108 - Building pixels: 319, Error rate: 0.0029
+  10. tuscaloosa-tornado_00000210 - Building pixels: 357, Error rate: 0.0048

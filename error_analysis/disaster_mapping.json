@@ -1,0 +1,21 @@
+{
+  "socal-fire": "fire",
+  "woolsey-fire": "fire",
+  "palu-tsunami": "tsunami",
+  "sunda-tsunami": "tsunami",
+  "joplin-tornado": "tornado",
+  "moore-tornado": "tornado",
+  "tuscaloosa-tornado": "tornado",
+  "portugal-wildfire": "wildfire",
+  "santa-rosa-wildfire": "wildfire",
+  "pinery-bushfire": "bushfire",
+  "midwest-flooding": "flooding",
+  "nepal-flooding": "flooding",
+  "mexico-earthquake": "earthquake",
+  "guatemala-volcano": "volcano",
+  "lower-puna-volcano": "volcano",
+  "hurricane-florence": "hurricane",
+  "hurricane-harvey": "hurricane",
+  "hurricane-matthew": "hurricane",
+  "hurricane-michael": "hurricane"
+}

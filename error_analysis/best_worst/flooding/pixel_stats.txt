@@ -1,0 +1,30 @@
+Disaster type: flooding
+Building pixel filter: 100 to 500
+Total samples processed: 100
+Samples kept: 20
+Samples skipped (too few buildings): 23
+Samples skipped (too many buildings): 57
+
+Best Examples (lowest error rate):
+  1. nepal-flooding_00000120 - Building pixels: 155, Error rate: 0.0014
+  2. midwest-flooding_00000436 - Building pixels: 110, Error rate: 0.0017
+  3. nepal-flooding_00000547 - Building pixels: 154, Error rate: 0.0018
+  4. nepal-flooding_00000011 - Building pixels: 127, Error rate: 0.0020
+  5. midwest-flooding_00000427 - Building pixels: 181, Error rate: 0.0022
+  6. midwest-flooding_00000366 - Building pixels: 321, Error rate: 0.0024
+  7. midwest-flooding_00000144 - Building pixels: 431, Error rate: 0.0025
+  8. nepal-flooding_00000330 - Building pixels: 427, Error rate: 0.0025
+  9. nepal-flooding_00000327 - Building pixels: 266, Error rate: 0.0028
+  10. nepal-flooding_00000528 - Building pixels: 215, Error rate: 0.0032
+
+Worst Examples (highest error rate):
+  1. nepal-flooding_00000247 - Building pixels: 438, Error rate: 0.0032
+  2. midwest-flooding_00000244 - Building pixels: 286, Error rate: 0.0034
+  3. nepal-flooding_00000394 - Building pixels: 386, Error rate: 0.0035
+  4. midwest-flooding_00000242 - Building pixels: 134, Error rate: 0.0036
+  5. midwest-flooding_00000201 - Building pixels: 249, Error rate: 0.0036
+  6. midwest-flooding_00000380 - Building pixels: 433, Error rate: 0.0041
+  7. midwest-flooding_00000267 - Building pixels: 474, Error rate: 0.0045
+  8. midwest-flooding_00000351 - Building pixels: 298, Error rate: 0.0047
+  9. nepal-flooding_00000059 - Building pixels: 412, Error rate: 0.0053
+  10. midwest-flooding_00000424 - Building pixels: 313, Error rate: 0.0070

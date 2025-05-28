@@ -1,0 +1,625 @@
+#!/usr/bin/env python3
+# Single-Input Damage Classification Model
+# This version only uses post-disaster images (no pre-disaster context)
+# to demonstrate why pre-disaster context is important for damage assessment
+
+import os
+import sys
+import torch
+import torch.nn as nn
+import torch.optim as optim
+from torch.utils.data import Dataset, DataLoader, Subset
+from tqdm import tqdm
+import matplotlib.pyplot as plt
+import numpy as np
+from sklearn.metrics import jaccard_score
+import random
+from datetime import datetime
+import time
+import torch.nn.functional as F
+import json
+from PIL import Image, ImageDraw
+import torchvision.transforms as T
+from shapely import wkt
+import shutil
+
+# Add the project root to the Python path
+script_dir = os.path.dirname(os.path.abspath(__file__))
+project_root = os.path.abspath(os.path.join(script_dir, "..", "..", ".."))
+sys.path.insert(0, project_root)
+
+# Import from project modules
+from scripts.training.utils import (
+    UNet, seed_everything, create_versioned_directory, 
+    calculate_iou, plot_learning_curves, FocalLoss
+)
+
+# Import damage class mapping and dataset from the main damage classifier
+from scripts.training.train_dam_classifier import (
+    DAMAGE_CLASS_MAP, ImprovedDamageDataset, dice_loss_multiclass
+)
+
+# Single-input damage classifier (only post-disaster images)
+class SingleInputDamageClassifier(nn.Module):
+    """
+    Damage classifier that uses only post-disaster images
+    """
+    def __init__(self, in_channels=3, out_channels=5):
+        super(SingleInputDamageClassifier, self).__init__()
+        
+        # Standard U-Net for post-disaster image only
+        self.post_unet = UNet(in_channels=in_channels, out_channels=out_channels)
+        
+        # Final convolution to produce class predictions
+        self.final_conv = nn.Sequential(
+            nn.Conv2d(out_channels, 128, kernel_size=3, padding=1),
+            nn.BatchNorm2d(128),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(128, out_channels, kernel_size=1)
+        )
+        
+    def forward(self, post_img):
+        # Process post-disaster image only
+        post_features = self.post_unet(post_img)
+        
+        # Final prediction
+        output = self.final_conv(post_features)
+        
+        return output
+
+# Modified dataset class that only returns post-disaster images
+class SingleInputDamageDataset(Dataset):
+    """
+    Dataset wrapper that uses the ImprovedDamageDataset but only returns
+    post-disaster images and damage masks, discarding pre-disaster images
+    """
+    def __init__(self, full_dataset):
+        self.full_dataset = full_dataset
+    
+    def __len__(self):
+        return len(self.full_dataset)
+    
+    def __getitem__(self, idx):
+        # Get the original triplet (pre, post, damage)
+        pre_img, post_img, damage_mask = self.full_dataset[idx]
+        
+        # Return only post_img and damage_mask
+        return post_img, damage_mask
+
+def visualize_single_input_predictions(model, dataset, device, num_samples=4, save_path=None):
+    """
+    Visualize damage classification predictions for the single-input model
+    """
+    model.eval()
+    # Select random indices
+    indices = random.sample(range(len(dataset)), min(num_samples, len(dataset)))
+    
+    # Define colors for each damage class
+    damage_colors = [
+        [0, 0, 0],       # Background (black)
+        [0, 255, 0],     # No damage (green)
+        [255, 255, 0],   # Minor damage (yellow)
+        [255, 165, 0],   # Major damage (orange)
+        [255, 0, 0]      # Destroyed (red)
+    ]
+    
+    # Class names for display
+    class_names = ['Background', 'No Damage', 'Minor Damage', 'Major Damage', 'Destroyed']
+    
+    # Configure the plot
+    fig, axes = plt.subplots(num_samples, 3, figsize=(15, 5 * num_samples))
+    if num_samples == 1:
+        axes = [axes]  # Make sure axes is a list for single sample case
+    
+    # Track per-class IoU
+    class_iou = {cls: [] for cls in range(5)}
+    
+    with torch.no_grad():
+        for i, idx in enumerate(indices):
+            try:
+                # Check if dataset is a SingleInputDamageDataset or has a full_dataset attribute
+                if hasattr(dataset, 'full_dataset'):
+                    # Get sample from the original dataset to get both pre and post for visualization
+                    pre_img, post_img, damage_mask = dataset.full_dataset[idx]
+                else:
+                    # Get just post image and mask directly
+                    post_img, damage_mask = dataset[idx]
+                
+                # Get prediction using only post-disaster image
+                post_img_input = post_img.unsqueeze(0).to(device)
+                
+                # Forward pass
+                outputs = model(post_img_input)
+                
+                # Get predicted class for each pixel
+                _, pred_classes = torch.max(outputs, dim=1)
+                
+                # Move tensors to CPU for visualization
+                pred_classes = pred_classes.squeeze().cpu().numpy()
+                damage_mask = damage_mask.cpu().numpy()
+                
+                # Create colored visualizations
+                colored_pred = np.zeros((pred_classes.shape[0], pred_classes.shape[1], 3), dtype=np.uint8)
+                colored_mask = np.zeros((damage_mask.shape[0], damage_mask.shape[1], 3), dtype=np.uint8)
+                
+                # Color each class in the prediction and ground truth
+                for class_idx in range(len(damage_colors)):
+                    colored_pred[pred_classes == class_idx] = damage_colors[class_idx]
+                    colored_mask[damage_mask == class_idx] = damage_colors[class_idx]
+                
+                # Calculate per-class IoU for this sample
+                for cls in range(5):
+                    true_mask = (damage_mask == cls)
+                    pred_mask = (pred_classes == cls)
+                    
+                    intersection = np.logical_and(true_mask, pred_mask).sum()
+                    union = np.logical_or(true_mask, pred_mask).sum()
+                    iou = intersection / union if union > 0 else float('nan')
+                    
+                    if not np.isnan(iou):
+                        class_iou[cls].append(iou)
+                
+                # Denormalize images for display
+                post_img_np = post_img.cpu().numpy()
+                
+                mean = np.array([0.485, 0.456, 0.406])
+                std = np.array([0.229, 0.224, 0.225])
+                
+                post_img_np = np.transpose(post_img_np, (1, 2, 0))
+                post_img_np = post_img_np * std + mean
+                post_img_np = np.clip(post_img_np, 0, 1)
+                
+                # Plot in the current row
+                axes[i][0].imshow(post_img_np)
+                axes[i][0].set_title("Post-disaster Image")
+                axes[i][0].axis('off')
+                
+                axes[i][1].imshow(colored_mask)
+                axes[i][1].set_title("Ground Truth Damage")
+                axes[i][1].axis('off')
+                
+                axes[i][2].imshow(colored_pred)
+                axes[i][2].set_title("Predicted Damage")
+                axes[i][2].axis('off')
+                
+            except Exception as e:
+                print(f"Error processing sample {idx}: {e}")
+                # In case of error, fill the row with blank plots
+                for j in range(3):
+                    axes[i][j].imshow(np.zeros((10, 10, 3)))
+                    axes[i][j].set_title("Error")
+                    axes[i][j].axis('off')
+    
+    # Calculate average IoU for each class
+    avg_class_iou = {}
+    for cls in range(5):
+        if class_iou[cls]:
+            avg_class_iou[cls] = sum(class_iou[cls]) / len(class_iou[cls])
+        else:
+            avg_class_iou[cls] = float('nan')
+    
+    # Calculate mean IoU (excluding background)
+    valid_ious = [iou for cls, iou in avg_class_iou.items() if cls > 0 and not np.isnan(iou)]
+    mean_iou = sum(valid_ious) / len(valid_ious) if valid_ious else 0
+    
+    # Add a text box with IoU results
+    plt.figtext(0.5, 0.01, f"Mean IoU (excluding background): {mean_iou:.4f}", ha="center", 
+                fontsize=14, bbox={"facecolor":"white", "alpha":0.5, "pad":5})
+    
+    text = ""
+    for cls in range(5):
+        iou_value = avg_class_iou[cls]
+        iou_str = f"{iou_value:.4f}" if not np.isnan(iou_value) else "N/A"
+        text += f"{class_names[cls]}: {iou_str}   "
+    
+    plt.figtext(0.5, 0.005, text, ha="center", fontsize=12)
+    
+    plt.tight_layout(rect=[0, 0.05, 1, 0.95])
+    
+    if save_path:
+        plt.savefig(save_path)
+        print(f"Visualization saved to {save_path}")
+    
+    # Print IoU values
+    print("\nPer-Class IoU:")
+    for cls in range(5):
+        iou_value = avg_class_iou[cls]
+        iou_str = f"{iou_value:.4f}" if not np.isnan(iou_value) else "N/A"
+        print(f"  {class_names[cls]}: {iou_str}")
+    print(f"Mean IoU (excluding background): {mean_iou:.4f}")
+    
+    plt.close()
+    
+    return avg_class_iou, mean_iou
+
+def main():
+    """
+    Main function to run the single-input damage classification training pipeline.
+    """
+    # Set multiprocessing start method to 'spawn' to avoid CUDA initialization errors
+    import torch.multiprocessing as mp
+    try:
+        mp.set_start_method('spawn', force=True)
+        print("Multiprocessing start method set to 'spawn'")
+    except RuntimeError:
+        print("Multiprocessing start method already set to 'spawn' or could not be set")
+        pass
+        
+    start_time = time.time()
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    seed_everything(42)
+    
+    # Get project root directory
+    project_root = os.path.abspath(os.path.join(script_dir, "..", "..", ".."))
+    
+    # Hyperparameters & settings
+    root_dir = os.path.join(project_root, "data", "xBD")
+    batch_size = 4
+    lr = 0.0002
+    num_epochs = 10
+    val_ratio = 0.2
+    image_size = 256
+    num_classes = 5  # Background + 4 damage classes
+
+    # Create output directory
+    output_dir = os.path.join(project_root, "output", "experiments", "damage_classifier")
+    os.makedirs(output_dir, exist_ok=True)
+    
+    # Create run directory for this experiment
+    experiment_name = "single_input"
+    run_dir = os.path.join(output_dir, experiment_name)
+    os.makedirs(run_dir, exist_ok=True)
+    
+    model_dir = os.path.join(run_dir, "models")
+    viz_dir = os.path.join(run_dir, "visualizations")
+    os.makedirs(model_dir, exist_ok=True)
+    os.makedirs(viz_dir, exist_ok=True)
+    
+    # Save configuration
+    config = {
+        "experiment": "Single-Input (Post-Disaster Only)",
+        "timestamp": timestamp,
+        "batch_size": batch_size,
+        "learning_rate": lr,
+        "num_epochs": num_epochs,
+        "val_ratio": val_ratio,
+        "image_size": image_size,
+        "num_classes": num_classes
+    }
+    
+    with open(os.path.join(run_dir, "config.txt"), "w") as f:
+        for key, value in config.items():
+            f.write(f"{key}: {value}\n")
+    
+    # Set device
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print(f"Using device: {device}")
+    
+    # Initialize dataset with both pre and post disaster images (will discard pre later)
+    print("Initializing ImprovedDamageDataset for training...")
+    full_dataset = ImprovedDamageDataset(
+        root_dir=root_dir,
+        image_size=image_size,
+        use_xy=True,
+        augment=True
+    )
+    
+    # Wrap the dataset to only use post-disaster images
+    single_input_dataset = SingleInputDamageDataset(full_dataset)
+    
+    # Create train-val split
+    dataset_size = len(single_input_dataset)
+    indices = list(range(dataset_size))
+    random.shuffle(indices)
+    split = int(np.floor(val_ratio * dataset_size))
+    train_indices, val_indices = indices[split:], indices[:split]
+    
+    train_dataset = Subset(single_input_dataset, train_indices)
+    val_dataset = Subset(single_input_dataset, val_indices)
+    
+    print(f"Training samples: {len(train_dataset)}, Validation samples: {len(val_dataset)}")
+    
+    # Calculate class frequencies for weighting
+    print("Calculating class frequencies for weighting...")
+    class_counts = torch.zeros(num_classes)
+    
+    # Keep track of damage class presence in each sample for weighted sampling
+    sample_weights = torch.ones(len(train_indices))
+    
+    for i, idx in enumerate(tqdm(train_indices, desc="Counting class pixels")):
+        _, damage_mask = single_input_dataset[idx]
+        
+        # Count pixels of each class
+        for c in range(num_classes):
+            class_count = (damage_mask == c).sum().item()
+            class_counts[c] += class_count
+            
+            # Give higher weights to samples containing buildings (any class >0)
+            if c == 1 and class_count > 0:  # No damage class
+                sample_weights[i] = max(sample_weights[i], 10.0)  # Higher weight for no-damage
+            elif c == 2 and class_count > 0:  # Minor damage class - give highest weight
+                sample_weights[i] = max(sample_weights[i], 25.0)  # Significant boost for minor damage
+            elif c >= 3 and class_count > 0:  # Major damage or destroyed
+                damage_weight = (c / num_classes) * 20  # Higher damage classes get higher weights
+                sample_weights[i] = max(sample_weights[i], damage_weight)
+    
+    # Calculate class weights inversely proportional to frequencies
+    total_pixels = class_counts.sum()
+    # Normalized class frequencies
+    class_frequencies = class_counts / total_pixels
+    print(f"Class distribution: {class_frequencies.tolist()}")
+    
+    # Define custom class weights instead of using inverse frequency
+    alpha = torch.ones(num_classes)
+    alpha[0] = 0.05  # Background contributes little to the loss
+    alpha[1] = 2.0   # No-damage class
+    alpha[2] = 5.0   # Minor-damage class (significantly increased)
+    alpha[3] = 3.0   # Major-damage class
+    alpha[4] = 3.0   # Destroyed class
+    
+    # Move to device
+    class_weights = alpha.to(device)
+    
+    print(f"Using custom class weights: {class_weights.tolist()}")
+    
+    # Create a weighted sampler for training data to balance class representation
+    sampler = torch.utils.data.WeightedRandomSampler(
+        weights=sample_weights,
+        num_samples=len(train_indices),
+        replacement=True
+    )
+    
+    print("Using weighted sampler to balance training batches")
+    
+    # Create dataloaders
+    train_loader = DataLoader(
+        train_dataset,
+        batch_size=batch_size,
+        sampler=sampler,  # Use weighted sampling
+        num_workers=4,
+        pin_memory=True
+    )
+    
+    val_loader = DataLoader(
+        val_dataset,
+        batch_size=batch_size,
+        shuffle=False,
+        num_workers=4,
+        pin_memory=True
+    )
+    
+    # Initialize single-input model
+    model = SingleInputDamageClassifier(in_channels=3, out_channels=num_classes).to(device)
+    
+    # Loss components
+    gamma = 3.0  # focus parameter for Focal
+    focal_loss_fn = FocalLoss(gamma=gamma, alpha=class_weights)
+
+    def combined_loss_fn(logits, targets):
+        focal = focal_loss_fn(logits, targets)
+        dice = dice_loss_multiclass(logits, targets, num_classes=num_classes, ignore_index=None)
+        return 0.6 * focal + 0.4 * dice
+    
+    print(f"Using combined loss: 0.6*Focal(gamma={gamma}) + 0.4*Dice")
+    
+    # Optimizer with weight decay for better regularization
+    optimizer = optim.AdamW(model.parameters(), lr=lr, weight_decay=1e-4)
+    
+    # Learning rate scheduler - using OneCycleLR like in the original model
+    scheduler = optim.lr_scheduler.OneCycleLR(
+        optimizer,
+        max_lr=lr,
+        epochs=num_epochs,
+        steps_per_epoch=len(train_loader),
+        pct_start=0.3,
+        anneal_strategy='cos'
+    )
+    
+    # Training metrics tracking
+    epochs_list = []
+    train_losses = []
+    val_losses = []
+    val_ious = []
+    best_iou = 0.0
+    best_model_path = None
+    
+    # Training loop
+    for epoch in range(num_epochs):
+        model.train()
+        running_loss = 0.0
+        epoch_start_time = time.time()
+        
+        # Training phase
+        train_pbar = tqdm(train_loader, desc=f"Epoch {epoch+1}/{num_epochs} [TRAIN]", leave=True)
+        for post_imgs, damage_masks in train_pbar:
+            post_imgs = post_imgs.to(device)
+            damage_masks = damage_masks.to(device)
+            
+            # Zero gradients
+            optimizer.zero_grad()
+            
+            # Forward pass - outputs shape: [batch_size, num_classes, H, W]
+            outputs = model(post_imgs)
+            
+            # Compute combined loss
+            loss = combined_loss_fn(outputs, damage_masks)
+            
+            # Backward pass and optimization
+            loss.backward()
+            optimizer.step()
+            scheduler.step()
+            
+            running_loss += loss.item()
+            train_pbar.set_postfix({"loss": f"{loss.item():.4f}"})
+        
+        # Calculate average training loss
+        avg_train_loss = running_loss / len(train_loader)
+        train_losses.append(avg_train_loss)
+        
+        # Validation phase
+        model.eval()
+        val_loss = 0.0
+        val_iou = 0.0
+        
+        with torch.no_grad():
+            val_pbar = tqdm(val_loader, desc=f"Epoch {epoch+1}/{num_epochs} [VAL]", leave=True)
+            for post_imgs, damage_masks in val_pbar:
+                post_imgs = post_imgs.to(device)
+                damage_masks = damage_masks.to(device)
+                
+                # Forward pass
+                outputs = model(post_imgs)
+                
+                # Compute combined loss
+                loss = combined_loss_fn(outputs, damage_masks)
+                val_loss += loss.item()
+                
+                # Get predicted class for each pixel
+                _, preds = torch.max(outputs, dim=1)
+                
+                # Calculate IoU for multi-class segmentation
+                batch_iou = calculate_iou(preds, damage_masks, threshold=0.5, num_classes=num_classes)
+                val_iou += batch_iou
+                
+                val_pbar.set_postfix({"loss": f"{loss.item():.4f}", "iou": f"{batch_iou:.4f}"})
+        
+        # Calculate average validation metrics
+        avg_val_loss = val_loss / len(val_loader)
+        avg_val_iou = val_iou / len(val_loader)
+        val_losses.append(avg_val_loss)
+        val_ious.append(avg_val_iou)
+        epochs_list.append(epoch + 1)
+        
+        # Calculate elapsed time
+        epoch_time = time.time() - epoch_start_time
+        
+        # Print epoch summary
+        print(f"Epoch [{epoch+1}/{num_epochs}] "
+              f"Train Loss: {avg_train_loss:.4f} | "
+              f"Val Loss: {avg_val_loss:.4f} | "
+              f"Val IoU: {avg_val_iou:.4f} | "
+              f"Time: {epoch_time:.1f}s")
+        
+        # Save the model if it's the best so far
+        if avg_val_iou > best_iou:
+            # Delete previous best model file if it exists
+            if best_model_path and os.path.exists(best_model_path):
+                os.remove(best_model_path)
+                print(f"Removed previous best model: {best_model_path}")
+            
+            best_iou = avg_val_iou
+            best_model_path = os.path.join(model_dir, f"best_model_epoch_{epoch+1}.pt")
+            torch.save(model.state_dict(), best_model_path)
+            print(f"New best model saved with IoU: {best_iou:.4f}")
+            
+            # Visualize predictions with best model
+            vis_save_path = os.path.join(viz_dir, f"predictions_epoch_{epoch+1}.png")
+            visualize_single_input_predictions(model, single_input_dataset, device, num_samples=4, save_path=vis_save_path)
+
+        # Additional analysis: per-class performance at final model
+        if best_model_path:
+            print("\nAnalyzing per-class performance of best model...")
+            model.load_state_dict(torch.load(best_model_path))
+            model.eval()
+            
+            class_names = ['Background', 'No Damage', 'Minor Damage', 'Major Damage', 'Destroyed']
+            class_correct = {i: 0 for i in range(num_classes)}
+            class_total = {i: 0 for i in range(num_classes)}
+            
+            with torch.no_grad():
+                for post_imgs, damage_masks in tqdm(val_loader, desc="Evaluating class performance"):
+                    post_imgs = post_imgs.to(device)
+                    damage_masks = damage_masks.to(device)
+                    
+                    outputs = model(post_imgs)
+                    _, preds = torch.max(outputs, dim=1)
+                    
+                    # Count per-class accuracy
+                    for c in range(num_classes):
+                        class_mask = (damage_masks == c)
+                        if class_mask.sum() > 0:  # Only calculate if class exists in ground truth
+                            class_correct[c] += ((preds == c) & class_mask).sum().item()
+                            class_total[c] += class_mask.sum().item()
+            
+            # Calculate per-class accuracy
+            class_accuracy = {}
+            print("\nPer-Class Accuracy:")
+            for c in range(num_classes):
+                if class_total[c] > 0:
+                    accuracy = class_correct[c] / class_total[c]
+                    class_accuracy[c] = accuracy
+                    print(f"  {class_names[c]}: {accuracy:.4f} ({class_correct[c]}/{class_total[c]})")
+                else:
+                    class_accuracy[c] = float('nan')
+                    print(f"  {class_names[c]}: N/A (No samples)")
+            
+            # Save class performance
+            class_perf_path = os.path.join(run_dir, "class_performance.txt")
+            with open(class_perf_path, "w") as f:
+                f.write("Class Performance (Best Model):\n")
+                for c in range(num_classes):
+                    if class_total[c] > 0:
+                        f.write(f"{class_names[c]}: Accuracy={class_accuracy[c]:.4f} ({class_correct[c]}/{class_total[c]})\n")
+                    else:
+                        f.write(f"{class_names[c]}: N/A (No samples)\n")
+                
+            # Create a bar chart to visualize class performance
+            plt.figure(figsize=(10, 6))
+            valid_classes = [c for c in range(num_classes) if not np.isnan(class_accuracy[c])]
+            valid_names = [class_names[c] for c in valid_classes]
+            valid_accuracies = [class_accuracy[c] for c in valid_classes]
+            
+            colors = ['gray', 'green', 'yellow', 'orange', 'red']
+            bar_colors = [colors[c] for c in valid_classes]
+            
+            plt.bar(valid_names, valid_accuracies, color=bar_colors)
+            plt.xlabel('Damage Class')
+            plt.ylabel('Pixel Accuracy')
+            plt.title('Per-Class Accuracy (Single Input)')
+            plt.ylim([0, 1.0])
+            
+            for i, v in enumerate(valid_accuracies):
+                plt.text(i, v + 0.02, f'{v:.2f}', ha='center')
+            
+            plt.tight_layout()
+            
+            class_chart_path = os.path.join(viz_dir, "class_accuracy.png")
+            plt.savefig(class_chart_path)
+            print(f"Class accuracy chart saved to {class_chart_path}")
+            plt.close()
+    
+    # Create learning curves plot
+    curves_save_path = os.path.join(viz_dir, "learning_curves.png")
+    plot_learning_curves(
+        epochs_list,
+        train_losses,
+        val_losses,
+        val_ious,
+        curves_save_path
+    )
+    
+    # Save final metrics
+    metrics = {
+        "epochs": epochs_list,
+        "train_losses": train_losses,
+        "val_losses": val_losses,
+        "val_ious": val_ious,
+        "best_iou": best_iou
+    }
+    
+    metrics_path = os.path.join(run_dir, "training_metrics.txt")
+    with open(metrics_path, "w") as f:
+        for key, values in metrics.items():
+            if isinstance(values, list):
+                f.write(f"{key}: {values}\n")
+            else:
+                f.write(f"{key}: {values}\n")
+    
+    total_time = time.time() - start_time
+    print(f"Training completed in {total_time/60:.2f} minutes")
+    print(f"Best validation IoU: {best_iou:.4f}")
+    print(f"All artifacts saved to {run_dir}")
+
+
+if __name__ == "__main__":
+    main() 

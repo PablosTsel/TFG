@@ -1,0 +1,30 @@
+Disaster type: wildfire
+Building pixel filter: 100 to 500
+Total samples processed: 100
+Samples kept: 13
+Samples skipped (too few buildings): 56
+Samples skipped (too many buildings): 31
+
+Best Examples (lowest error rate):
+  1. portugal-wildfire_00001581 - Building pixels: 132, Error rate: 0.0007
+  2. portugal-wildfire_00001199 - Building pixels: 142, Error rate: 0.0009
+  3. portugal-wildfire_00001295 - Building pixels: 190, Error rate: 0.0011
+  4. portugal-wildfire_00000339 - Building pixels: 134, Error rate: 0.0012
+  5. portugal-wildfire_00001183 - Building pixels: 183, Error rate: 0.0014
+  6. portugal-wildfire_00000248 - Building pixels: 326, Error rate: 0.0014
+  7. portugal-wildfire_00001710 - Building pixels: 208, Error rate: 0.0016
+  8. portugal-wildfire_00000556 - Building pixels: 232, Error rate: 0.0020
+  9. portugal-wildfire_00000243 - Building pixels: 314, Error rate: 0.0020
+  10. portugal-wildfire_00001039 - Building pixels: 183, Error rate: 0.0024
+
+Worst Examples (highest error rate):
+  1. portugal-wildfire_00000339 - Building pixels: 134, Error rate: 0.0012
+  2. portugal-wildfire_00001183 - Building pixels: 183, Error rate: 0.0014
+  3. portugal-wildfire_00000248 - Building pixels: 326, Error rate: 0.0014
+  4. portugal-wildfire_00001710 - Building pixels: 208, Error rate: 0.0016
+  5. portugal-wildfire_00000556 - Building pixels: 232, Error rate: 0.0020
+  6. portugal-wildfire_00000243 - Building pixels: 314, Error rate: 0.0020
+  7. portugal-wildfire_00001039 - Building pixels: 183, Error rate: 0.0024
+  8. portugal-wildfire_00001597 - Building pixels: 396, Error rate: 0.0024
+  9. portugal-wildfire_00001262 - Building pixels: 368, Error rate: 0.0028
+  10. portugal-wildfire_00001309 - Building pixels: 207, Error rate: 0.0030

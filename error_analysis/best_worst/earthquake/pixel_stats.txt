@@ -1,0 +1,20 @@
+Disaster type: earthquake
+Building pixel filter: 100 to 500
+Total samples processed: 100
+Samples kept: 5
+Samples skipped (too few buildings): 0
+Samples skipped (too many buildings): 95
+
+Best Examples (lowest error rate):
+  1. mexico-earthquake_00000192 - Building pixels: 124, Error rate: 0.0012
+  2. mexico-earthquake_00000148 - Building pixels: 236, Error rate: 0.0028
+  3. mexico-earthquake_00000172 - Building pixels: 258, Error rate: 0.0038
+  4. mexico-earthquake_00000155 - Building pixels: 178, Error rate: 0.0042
+  5. mexico-earthquake_00000096 - Building pixels: 381, Error rate: 0.0058
+
+Worst Examples (highest error rate):
+  1. mexico-earthquake_00000192 - Building pixels: 124, Error rate: 0.0012
+  2. mexico-earthquake_00000148 - Building pixels: 236, Error rate: 0.0028
+  3. mexico-earthquake_00000172 - Building pixels: 258, Error rate: 0.0038
+  4. mexico-earthquake_00000155 - Building pixels: 178, Error rate: 0.0042
+  5. mexico-earthquake_00000096 - Building pixels: 381, Error rate: 0.0058
